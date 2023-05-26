@@ -24,8 +24,9 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 #include "addons/TokenHelper.h"
 //Provide the RTDB payload printing info and other helper functions.
 #include "addons/RTDBHelper.h"
+#include <DHT.h>
 
-// Insert your network credentials
+// Insert your networcredentials
 #define WIFI_SSID "NaVindu"
 #define WIFI_PASSWORD "NaVindu69"
 
@@ -33,7 +34,11 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 #define API_KEY "AIzaSyB40dq_o174HaTIMshq7xuVQRXo1wbw9Vo"
 
 // Insert RTDB URLefine the RTDB URL */
-#define DATABASE_URL "park-here-ba636-default-rtdb.firebaseio.com/" 
+#define DATABASE_URL "park-here-ba636-default-rtdb.firebaseio.com/"
+#define DHTPIN D1       // Pin connected to the DHT sensor
+#define DHTTYPE DHT11
+   // DHT 11 
+DHT dht(DHTPIN, DHTTYPE);   
 
 //Define Firebase Data object
 FirebaseData fbdo;
@@ -59,8 +64,10 @@ int myArray[5];
 int arraySize =5;
 int currentindex =0;
 
+
 //setup
 void setup(){
+  
 s1.attach(D2);  
 Serial.begin(115200);
 //firebaase
@@ -102,12 +109,20 @@ WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   Serial.println("Ready to read RFID cards...");
 //rifid end
+pinMode(DHTPIN, INPUT);
+  dht.begin();
 //setup end
 }
 //loop
 void loop()
 {
-//firebase
+
+  
+  float h = dht.readHumidity();
+
+  float t = dht.readTemperature();
+  
+  
   if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
     if (Firebase.RTDB.getInt(&fbdo, "/test/key2")) {
@@ -176,6 +191,8 @@ void loop()
 
   }
 //firevase end
+Firebase.RTDB.setFloat(&fbdo, "DHT/humidity",h);
+Firebase.RTDB.setFloat(&fbdo, "DHT/temperature", t);
 //rfid 
 
 if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
@@ -198,7 +215,11 @@ if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
 if  (myArray[i]==newcode)
 {
   Serial.println("yes");
-  s1.write(170); // Set the servo angle to 90 degrees
+
+       Serial.println(t);
+s1.write(0);   
+  
+  s1.write(150); // Set the servo angle to 90 degrees
   delay(4000);       // Wait for 1 second
 
        // Wait for 1 second
